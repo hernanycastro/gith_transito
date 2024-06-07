@@ -9,27 +9,28 @@ p_load("tidyverse", "tidyr", "haven", "lubridate","janitor",
        "rmarkdown")
 
 #Importacao ----
-populacao_ibge <- readxl::read_xlsx("populacao_df_ra.xlsx")
-pontos <- readxl::read_xlsx("as_seas_pontos.xlsx")
-saude_ecr <- readxl::read_xlsx("saude_ecr.xlsx")
-bo <- readxl::read_xlsx("pcdf_regionais.xlsx")
-ouvidoria <- readxl::read_xlsx("ouv_dist.xlsx")
-saude_upa <- readxl::read_xlsx("saude_upa.xlsx")
-residuos_lotes <- readxl::read_xlsx("lotes_residuos.xlsx")
-residuos_slu <- readxl::read_xlsx("residuos.xlsx")
-b_geacaf <- readxl::read_xlsx("as_beneficios_geacaf_mes.xlsx")
-seas <- readxl::read_xlsx("as_seas_qnt_mes.xlsx")
-seg_alim <- readxl::read_xlsx("seguranca_alimentar_mes.xlsx")
-obitos <- readxl::read_xlsx("obitos.xlsx")
-cadunico <- readxl::read_xlsx("cadastro_unico_mes.xlsx")
+populacao_ibge <- readxl::read_xlsx("populacao_df_ra.xlsx") #População RA's (Censo IBGE 2022)
+pontos <- readxl::read_xlsx("as_seas_pontos.xlsx") #Concentração de Pop Rua (SEDES/LAI)
+saude_ecr <- readxl::read_xlsx("saude_ecr.xlsx") #Consultório na Rua (SES/LAI)
+bo <- readxl::read_xlsx("pcdf_regionais.xlsx") #Boletim de Ocorrências (PCDF/LAI)
+ouvidoria <- readxl::read_xlsx("ouv_dist.xlsx") #Ouvidorias (CGDF/LAI)
+saude_upa <- readxl::read_xlsx("saude_upa.xlsx") #UPA (SES/LAI)
+residuos_lotes <- readxl::read_xlsx("lotes_residuos.xlsx") #SLU (Site SLU)
+residuos_slu <- readxl::read_xlsx("residuos.xlsx") #SLU (Site SLU)
+b_geacaf <- readxl::read_xlsx("as_beneficios_geacaf_mes.xlsx") #Benefício Eventual (SEDES/LAI)
+seas <- readxl::read_xlsx("as_seas_qnt_mes.xlsx") #Abordagem Social (SEDES/LAI)
+seg_alim <- readxl::read_xlsx("seguranca_alimentar_mes.xlsx") #Kit Refeição (SEDES/LAI)
+obitos <- readxl::read_xlsx("obitos.xlsx") #Obitos (PCDF/LAI)
+cadunico <- readxl::read_xlsx("cadastro_unico_mes.xlsx") #CadÚnico (SEDES/LAI)
 
 #Limpeza ----
+#Converti os arquivos de Oficio do PDF para excel, já realizando a limpeza
 
 #EAD ----
 ##Transformação ----
 ### PIVOTAGEM ----
 ####Pontos Concent. ----
-concentracao <- pivot_longer(pontos,
+concentracao <- pivot_longer(pontos, #Formatando objeto para formato tidy
                              names_to = "mes",
                              values_to = "pontos",
                              cols = c("jan","fev","mar","abr","mai",
@@ -37,7 +38,7 @@ concentracao <- pivot_longer(pontos,
   arrange(ra, mes, pontos)
 
 ####B. Ocorrência ----
-ocorrencia <- pivot_longer(bo,
+ocorrencia <- pivot_longer(bo, #Formatando objeto para formato tidy
                            names_to = "mes",
                            values_to = "bo",
                            cols = c("jan","fev","mar","abr","mai",
@@ -45,7 +46,7 @@ ocorrencia <- pivot_longer(bo,
   select(ra,regional,mes,bo)
 
 ####Ouvidorias ----
-ouvidorias <- pivot_longer(ouvidoria,
+ouvidorias <- pivot_longer(ouvidoria, #Formatando objeto para formato tidy
                            names_to = "mes",
                            values_to = "ouvidoria",
                            cols = c("jan","fev","mar","abr","mai",
@@ -53,7 +54,7 @@ ouvidorias <- pivot_longer(ouvidoria,
   arrange(ra, regional,mes, ouvidoria)
 
 ####Upa ----
-upa <- pivot_longer(saude_upa,
+upa <- pivot_longer(saude_upa, #Formatando objeto para formato tidy
                            names_to = "mes",
                            values_to = "upa",
                            cols = c("jan","fev","mar","abr","mai",
@@ -61,7 +62,7 @@ upa <- pivot_longer(saude_upa,
   arrange(ra,mes,upa)
 
 ####Residuos ----
-residuos <- pivot_longer(residuos_slu,
+residuos <- pivot_longer(residuos_slu,#Formatando objeto para formato tidy
                     names_to = "mes",
                     values_to = "residuos",
                     cols = c("jan","fev","mar","abr","mai",
@@ -70,7 +71,7 @@ residuos <- pivot_longer(residuos_slu,
 
 ####Abordagem/SEAS ----
 abordagem <- seas %>%
-  pivot_longer(!'DADOS GERAIS', 
+  pivot_longer(!'DADOS GERAIS', #Formatando objeto para formato tidy
                names_to = "mes",
                values_to = "abordagens") %>%
   select(mes,abordagens) %>%
@@ -79,13 +80,13 @@ abordagem <- seas %>%
 
 ####Seg. Alimentar ----
 seg_alim <- seg_alim %>%
-  pivot_longer(!refeicao_kit, 
+  pivot_longer(!refeicao_kit, #Formatando objeto para formato tidy
                names_to = "mes",
                values_to = "kit_refeicao") %>%
   select(mes,kit_refeicao)
 
 ###JOIN - Trânsito----
-transito <- left_join(ouvidorias,concentracao)
+transito <- left_join(ouvidorias,concentracao) #Unindo objetos com maior número de observações
 transito <- left_join(transito,ocorrencia)
 transito <- left_join(transito,upa)
 transito <- left_join(transito,saude_ecr)
@@ -99,7 +100,7 @@ transito <- left_join(transito, obitos)
 transito <- left_join(transito, b_geacaf)
 
 #Organizar Transito
-transito %<>%
+transito %<>% #Formatando objeto para formato tidy
   filter(!is.na(lote)) %>%
   filter(!is.na(pontos)) %>%
   select(lote,regional,ra,mes,populacao,
@@ -109,7 +110,7 @@ transito %<>%
 
 ###MUTATE ----
 ####Proporções ----
-transito %<>%
+transito %<>% #Criando proporções em relação à população da RA x 1000, com 4 décimos
   mutate(pontos_prop = round(pontos / populacao * 1000,4)) %>%
   mutate(cadunico_prop = round(cadunico / populacao * 1000,4)) %>%
   mutate(abordagem_prop = round(abordagem / populacao * 1000,4)) %>%
@@ -128,22 +129,22 @@ transito %<>%
 
 ###Visualizando ----
 #VD vs VI's sob "Proporção" como Unidade de Medida e Variando os Níveis de Agregação 
-p_cnr <- transito %>%
+p_cnr <- transito %>% #Criando objeto com o ggplot para visualizar uma amostra dos dados 
   filter(!is.na(ecr_prop)) %>%
-  ggplot(aes(y = pontos_prop, x = ecr_prop, color = lote)) +
-  geom_point() +
-  geom_smooth(method = "lm", size = 0.1, alpha = 0.0) +
-  facet_wrap(~ ra, drop = F) +
-  labs(x = "Atendimentos CnR (1:1000)", 
-       y = "Pontos de Concentração (1:1000)") +
+  ggplot(aes(y = pontos_prop, x = ecr_prop, color = lote)) + #Colorir a maior unidade de agregação (lote)
+  geom_point() + #geom_point para visualizar possível correlação das proporções
+  geom_smooth(method = "lm", size = 0.1, alpha = 0.0) + #geom_smooth para visualizar possível tendência linear
+  facet_wrap(~ ra, drop = F) + #facet_wrap() para criar subpainéis segundo a menor unidade de agregação (RA)
+  labs(x = "Atendimentos CnR (1:1000)", #Usando escala linear no eixo x
+       y = "Pontos de Concentração (1:1000)") + #Usando escala linear no eixo y
   labs(title = "Relação do Consultório na Rua (CnR) com os Pontos de Concentração da População em Situação de Rua no DF em 2023",
        subtitle = "Proporção de Pontos de Concentração vs Proporção de Atendimentos do Cnr, em relação à População das RA's do DF (Censo IBGE 2022)",
        caption = "Fonte dos dados: Ouvidoria do GDF") +
-  theme_minimal() +
-  theme(legend.title = element_blank(),
-        legend.position = "bottom")
+  theme_minimal() + #Usando tema "minimal"
+  theme(legend.title = element_blank(), #retirando o título do ggplot
+        legend.position = "bottom") #posicionando a legenda centralizada e abaixo do ggplot
 
-p_cnr
+p_cnr #visualizando o gráfico
 
 ###CORRELAÇÃO ----
 ####Teste T ----
