@@ -5,7 +5,8 @@
 #Pacotes ----
 library(pacman)
 p_load("tidyverse", "tidyr", "haven", "lubridate","janitor",
-       "readxl", "stringr", "magrittr", "psych", "gapminder","scales")
+       "readxl", "stringr", "magrittr", "psych", "gapminder","scales",
+       "rmarkdown")
 
 #Importacao ----
 populacao_ibge <- readxl::read_xlsx("populacao_df_ra.xlsx")
@@ -127,7 +128,7 @@ transito %<>%
 
 ###Visualizando ----
 #VD vs VI's sob "Proporção" como Unidade de Medida e Variando os Níveis de Agregação 
-transito %>%
+p_cnr <- transito %>%
   filter(!is.na(ecr_prop)) %>%
   ggplot(aes(y = pontos_prop, x = ecr_prop, color = lote)) +
   geom_point() +
@@ -135,12 +136,14 @@ transito %>%
   facet_wrap(~ ra, drop = F) +
   labs(x = "Atendimentos CnR (1:1000)", 
        y = "Pontos de Concentração (1:1000)") +
-  labs(title = "Efeito do Consultório na Rua (CnR) sobre a Quantidade de Pontos de Concentração da População em Situação de Rua no Distrito Federal no Ano 2023",
+  labs(title = "Relação do Consultório na Rua (CnR) com os Pontos de Concentração da População em Situação de Rua no DF em 2023",
        subtitle = "Proporção de Pontos de Concentração vs Proporção de Atendimentos do Cnr, em relação à População das RA's do DF (Censo IBGE 2022)",
        caption = "Fonte dos dados: Ouvidoria do GDF") +
   theme_minimal() +
   theme(legend.title = element_blank(),
         legend.position = "bottom")
+
+p_cnr
 
 ###CORRELAÇÃO ----
 ####Teste T ----
