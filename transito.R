@@ -1,0 +1,139 @@
+#Transito Pop Rua ----
+## O que é? ----
+#
+
+#Pacotes ----
+library(pacman)
+p_load("tidyverse", "tidyr", "haven", "lubridate","janitor",
+       "readxl", "stringr", "magrittr", "psych", "gapminder")
+
+#Importacao ----
+populacao_ibge <- readxl::read_xlsx("populacao_df_ra.xlsx")
+pontos <- readxl::read_xlsx("as_seas_pontos.xlsx")
+saude_ecr <- readxl::read_xlsx("saude_ecr.xlsx")
+bo <- readxl::read_xlsx("pcdf_regionais.xlsx")
+ouvidoria <- readxl::read_xlsx("ouv_dist.xlsx")
+saude_upa <- readxl::read_xlsx("saude_upa.xlsx")
+residuos_lotes <- readxl::read_xlsx("lotes_residuos.xlsx")
+residuos_slu <- readxl::read_xlsx("residuos.xlsx")
+b_geacaf <- readxl::read_xlsx("as_beneficios_geacaf_mes.xlsx")
+seas <- readxl::read_xlsx("as_seas_qnt_mes.xlsx")
+seg_alim <- readxl::read_xlsx("seguranca_alimentar_mes.xlsx")
+obitos <- readxl::read_xlsx("obitos.xlsx")
+cadunico <- readxl::read_xlsx("cadastro_unico_mes.xlsx")
+
+#Limpeza ----
+
+#EAD ----
+##Transformação ----
+### PIVOTAGEM ----
+####Pontos Concent. ----
+concentracao <- pivot_longer(pontos,
+                             names_to = "mes",
+                             values_to = "pontos",
+                             cols = c("jan","fev","mar","abr","mai",
+                             "jun","jul","ago","set","out","nov","dez")) %>%
+  arrange(ra, mes, pontos)
+
+####B. Ocorrência ----
+ocorrencia <- pivot_longer(bo,
+                           names_to = "mes",
+                           values_to = "bo",
+                           cols = c("jan","fev","mar","abr","mai",
+                                    "jun","jul","ago","set","out","nov","dez")) %>%
+  select(ra,regional,mes,bo)
+
+####Ouvidorias ----
+ouvidorias <- pivot_longer(ouvidoria,
+                           names_to = "mes",
+                           values_to = "ouvidoria",
+                           cols = c("jan","fev","mar","abr","mai",
+                                    "jun","jul","ago","set","out","nov","dez")) %>%
+  arrange(ra, regional,mes, ouvidoria)
+
+####Upa ----
+upa <- pivot_longer(saude_upa,
+                           names_to = "mes",
+                           values_to = "upa",
+                           cols = c("jan","fev","mar","abr","mai",
+                                    "jun","jul","ago","set","out","nov","dez")) %>%
+  arrange(ra,mes,upa)
+
+####Residuos ----
+residuos <- pivot_longer(residuos_slu,
+                    names_to = "mes",
+                    values_to = "residuos",
+                    cols = c("jan","fev","mar","abr","mai",
+                             "jun","jul","ago","set","out","nov","dez")) %>%
+  arrange(lote,mes,residuos)
+
+####Abordagem/SEAS ----
+abordagem <- seas %>%
+  pivot_longer(!'DADOS GERAIS', 
+               names_to = "mes",
+               values_to = "abordagens") %>%
+  select(mes,abordagens) %>%
+  group_by(mes) %>%
+  summarise(abordagem = sum(abordagens,na.rm=T))
+
+####Seg. Alimentar ----
+seg_alim <- seg_alim %>%
+  pivot_longer(!refeicao_kit, 
+               names_to = "mes",
+               values_to = "kit_refeicao") %>%
+  select(mes,kit_refeicao)
+
+###JOIN - Trânsito----
+transito <- left_join(ouvidorias,concentracao)
+transito <- left_join(transito,ocorrencia)
+transito <- left_join(transito,upa)
+transito <- left_join(transito,saude_ecr)
+transito <- left_join(transito, populacao_ibge)
+transito <- left_join(transito, residuos_lotes)
+transito <- left_join(transito, residuos)
+transito <- left_join(transito, abordagem)
+transito <- left_join(transito, seg_alim)
+transito <- left_join(transito, cadunico)
+transito <- left_join(transito, obitos)
+transito <- left_join(transito, b_geacaf)
+
+####Organizar_DF ----
+transito %<>%
+  filter(!is.na(lote)) %>%
+  filter(!is.na(pontos)) %>%
+  select(lote,regional,ra,mes,populacao,
+         pontos,cadunico,abordagem,kit_refeicao,aux_vulnerab,
+         ecr,upa,
+         residuos,ouvidoria,bo,obitos)
+
+###MUTATE ----
+####Proporções ----
+transito %<>%
+  mutate(pontos_prop = round(pontos / populacao * 1000,4)) %>%
+  mutate(cadunico_prop = round(cadunico / populacao * 1000,4)) %>%
+  mutate(abordagem_prop = round(abordagem / populacao * 1000,4)) %>%
+  mutate(refeicao_prop = round(kit_refeicao / populacao * 1000,4)) %>%
+  mutate(aux_vul_prop = round(aux_vulnerab / populacao * 1000,4)) %>%
+  mutate(ecr_prop = round(ecr / populacao * 1000,4)) %>%
+  mutate(upa_prop = round(upa / populacao * 1000,4)) %>%
+  mutate(residuos_prop = round(residuos / populacao * 1000,4)) %>%
+  mutate(ouvidoria_prop = round(ouvidoria / populacao * 1000,4)) %>%
+  mutate(ocorrencias_prop = round(bo / populacao * 1000,4)) %>%
+  mutate(obitos_prop = round(obitos / populacao * 1000,4)) %>%
+  select(lote,regional,ra,mes,
+         pontos_prop,cadunico_prop,abordagem_prop,refeicao_prop,aux_vul_prop,
+         ecr_prop,upa_prop,
+         residuos_prop,ouvidoria_prop,ocorrencias_prop,obitos_prop)
+
+###CORRELAÇÃO ----
+####Teste T ----
+####Coef.Cronbach ----
+
+##Visualização ----
+
+##Modelando ----
+
+###Visualizando ----
+
+##Comunicando ----
+
