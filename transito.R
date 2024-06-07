@@ -5,7 +5,7 @@
 #Pacotes ----
 library(pacman)
 p_load("tidyverse", "tidyr", "haven", "lubridate","janitor",
-       "readxl", "stringr", "magrittr", "psych", "gapminder")
+       "readxl", "stringr", "magrittr", "psych", "gapminder","scales")
 
 #Importacao ----
 populacao_ibge <- readxl::read_xlsx("populacao_df_ra.xlsx")
@@ -97,7 +97,7 @@ transito <- left_join(transito, cadunico)
 transito <- left_join(transito, obitos)
 transito <- left_join(transito, b_geacaf)
 
-####Organizar_DF ----
+#Organizar Transito
 transito %<>%
   filter(!is.na(lote)) %>%
   filter(!is.na(pontos)) %>%
@@ -125,15 +125,31 @@ transito %<>%
          ecr_prop,upa_prop,
          residuos_prop,ouvidoria_prop,ocorrencias_prop,obitos_prop)
 
+###Visualizando ----
+#VD vs VI's sob "Proporção" como Unidade de Medida e Variando os Níveis de Agregação 
+transito %>%
+  filter(!is.na(ecr_prop)) %>%
+  ggplot(aes(y = pontos_prop, x = ecr_prop, color = lote)) +
+  geom_point() +
+  geom_smooth(method = "lm", size = 0.1, alpha = 0.0) +
+  facet_wrap(~ ra, drop = F) +
+  labs(x = "Atendimentos CnR (1:1000)", 
+       y = "Pontos de Concentração (1:1000)") +
+  labs(title = "Efeito do Consultório na Rua (CnR) sobre a Quantidade de Pontos de Concentração da População em Situação de Rua no Distrito Federal no Ano 2023",
+       subtitle = "Proporção de Pontos de Concentração vs Proporção de Atendimentos do Cnr, em relação à População das RA's do DF (Censo IBGE 2022)",
+       caption = "Fonte dos dados: Ouvidoria do GDF") +
+  theme_minimal() +
+  theme(legend.title = element_blank(),
+        legend.position = "bottom")
+
 ###CORRELAÇÃO ----
 ####Teste T ----
+
 ####Coef.Cronbach ----
 
 ##Visualização ----
 
 ##Modelando ----
-
-###Visualizando ----
 
 ##Comunicando ----
 
