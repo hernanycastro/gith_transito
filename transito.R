@@ -6,7 +6,7 @@
 library(pacman)
 p_load("tidyverse", "tidyr", "haven", "lubridate","janitor",
        "readxl", "stringr", "magrittr", "psych", "gapminder","scales",
-       "rmarkdown")
+       "rmarkdown","writexl")
 
 #Importacao ----
 populacao_ibge <- readxl::read_xlsx("populacao_df_ra.xlsx") #População RA's (Censo IBGE 2022)
@@ -134,7 +134,7 @@ p_cnr <- transito %>% #Criando objeto com o ggplot para visualizar uma amostra d
   ggplot(aes(y = pontos_prop, x = ecr_prop, color = lote)) + #Colorir a maior unidade de agregação (lote)
   geom_point() + #geom_point para visualizar possível correlação das proporções
   geom_smooth(method = "lm", size = 0.1, alpha = 0.0) + #geom_smooth para visualizar possível tendência linear
-  facet_wrap(~ ra, drop = F) + #facet_wrap() para criar subpainéis segundo a menor unidade de agregação (RA)
+  facet_grid(~ ra, drop = F) + #facet_wrap() para criar subpainéis segundo a menor unidade de agregação (RA)
   labs(x = "Atendimentos CnR (1:1000)", #Usando escala linear no eixo x
        y = "Pontos de Concentração (1:1000)") + #Usando escala linear no eixo y
   labs(title = "Relação do Consultório na Rua (CnR) com os Pontos de Concentração da População em Situação de Rua no DF em 2023",
