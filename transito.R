@@ -177,16 +177,18 @@ summary(modelo_anova)
 
 ####Coef.Cronbach ----
 #####Alpha Positivo ----
-alpha <- psych::alpha(transito[, c("residuos_prop",
+alpha <- psych::alpha(transito[, c("residuos_prop", #"ecr_prop",
                                    "cadunico_prop", 
                                    "abordagem_prop", 
                                    "aux_vul_prop")])
+#ecr_prop está correlacionado negativamente com essas variáveis 
 print(alpha)
 
 #####Alpha Negativo ----
-alpha_neg <- psych::alpha(transito[, c("ecr_prop", "ouvidoria_prop",
-                                       "refeicao_prop",
+alpha_neg <- psych::alpha(transito[, c("residuos_prop", "ouvidoria_prop",
+                                       "refeicao_prop", #"ecr_prop",
                                          "ocorrencias_prop", "obitos_prop")])
+#ecr_prop está correlacionado negativamente com essas variáveis
 print(alpha_neg)
 
 ##Visualização ----
@@ -219,7 +221,7 @@ plot(modelo_neg)
 qqnorm(modelo_neg$residuals)
 
 ### Modelo_pos ----
-modelo_pos <- lm(pontos_prop ~ ra + mes + cadunico_prop + 
+modelo_pos <- lm(pontos_prop ~ ra + mes + residuos_prop + cadunico_prop + 
                    abordagem_prop + refeicao_prop + aux_vul_prop, 
                  data = transito)
 
