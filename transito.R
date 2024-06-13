@@ -134,26 +134,108 @@ p_cnr <- transito %>% #Criando objeto com o ggplot para visualizar uma amostra d
   ggplot(aes(y = pontos_prop, x = ecr_prop, color = lote)) + #Colorir a maior unidade de agregação (lote)
   geom_point() + #geom_point para visualizar possível correlação das proporções
   geom_smooth(method = "lm", size = 0.1, alpha = 0.0) + #geom_smooth para visualizar possível tendência linear
-  facet_grid(~ ra, drop = F) + #facet_wrap() para criar subpainéis segundo a menor unidade de agregação (RA)
+  facet_grid(~ ra, drop = F) + #facet_grid() para criar subpainéis segundo a menor unidade de agregação (RA)
   labs(x = "Atendimentos CnR (1:1000)", #Usando escala linear no eixo x
        y = "Pontos de Concentração (1:1000)") + #Usando escala linear no eixo y
   labs(title = "Relação do Consultório na Rua (CnR) com os Pontos de Concentração da População em Situação de Rua no DF em 2023",
        subtitle = "Proporção de Pontos de Concentração vs Proporção de Atendimentos do Cnr, em relação à População das RA's do DF (Censo IBGE 2022)",
        caption = "Fonte dos dados: Ouvidoria do GDF") +
   theme_minimal() + #Usando tema "minimal"
-  theme(legend.title = element_blank(), #retirando o título do ggplot
+  theme(legend.title = element_blank(), #retirando o título da legenda do ggplot
         legend.position = "bottom") #posicionando a legenda centralizada e abaixo do ggplot
 
 p_cnr #visualizando o gráfico
 
+
+transito %>% #Criando objeto com o ggplot para visualizar uma amostra dos dados 
+  filter(!is.na(ecr_prop)) %>%
+  ggplot(aes(y = pontos_prop, x = ecr_prop, color = lote)) + #Colorir a maior unidade de agregação (lote)
+  geom_point() + #geom_point para visualizar possível correlação das proporções
+  geom_smooth(method = "lm", size = 0.1, alpha = 0.0) + #geom_smooth para visualizar possível tendência linear
+  facet_grid(~ ra, drop = F) + #facet_grid() para criar subpainéis segundo a menor unidade de agregação (RA)
+  scale_x_log10() + #Escala do eixo X em log10 para equilibrar a visualização com o eixo Y
+  labs(x = "Atendimentos CnR (1:1000)", #Usando escala linear no eixo x
+       y = "Pontos de Concentração (1:1000)") + #Usando escala linear no eixo y
+  labs(title = "Relação do Consultório na Rua (CnR) com os Pontos de Concentração da População em Situação de Rua no DF em 2023",
+       subtitle = "Proporção de Pontos de Concentração vs Proporção de Atendimentos do Cnr, em relação à População das RA's do DF (Censo IBGE 2022)",
+       caption = "Fonte dos dados: Ouvidoria do GDF") +
+  theme_minimal() + #Usando tema "minimal"
+  theme(legend.title = element_blank(), #retirando o título da legenda do ggplot
+        legend.position = "bottom") #posicionando a legenda centralizada e abaixo do ggplot
+
+
 ###CORRELAÇÃO ----
-####Teste T ----
+####ANOVA ----
+
+modelo_anova <- aov(pontos_prop ~ ra + mes + residuos_prop + ouvidoria_prop + 
+                      ocorrencias_prop + obitos_prop + ecr_prop +
+                      cadunico_prop + abordagem_prop + refeicao_prop + 
+                      aux_vul_prop, data = transito)
+
+# Resumo da ANOVA
+summary(modelo_anova)
 
 ####Coef.Cronbach ----
+#####Alpha Positivo ----
+alpha <- psych::alpha(transito[, c("residuos_prop",
+                                   "cadunico_prop", 
+                                   "abordagem_prop", 
+                                   "aux_vul_prop")])
+print(alpha)
+
+#####Alpha Negativo ----
+alpha_neg <- psych::alpha(transito[, c("ecr_prop", "ouvidoria_prop",
+                                       "refeicao_prop",
+                                         "ocorrencias_prop", "obitos_prop")])
+print(alpha_neg)
 
 ##Visualização ----
 
-##Modelando ----
+##Modelando RM ----
+
+transito$lote <- factor(transito$lote)
+transito$ra <- factor(transito$ra)
+transito$regional <- factor(transito$regional)
+
+### Modelo ----
+modelo <- lm(pontos_prop ~ ra + mes + residuos_prop + ouvidoria_prop + 
+                   ocorrencias_prop + obitos_prop + ecr_prop +
+               cadunico_prop + abordagem_prop + refeicao_prop + aux_vul_prop, 
+                 data = transito)
+
+# Resumo do modelo
+summary(modelo)
+plot(modelo)
+qqnorm(modelo$residuals)
+
+### Modelo_neg ----
+modelo_neg <- lm(pontos_prop ~ ra + mes + residuos_prop + ouvidoria_prop + 
+               ocorrencias_prop + obitos_prop, 
+             data = transito)
+
+#Resumo do modelo_neg
+summary(modelo_neg)
+plot(modelo_neg)
+qqnorm(modelo_neg$residuals)
+
+### Modelo_pos ----
+modelo_pos <- lm(pontos_prop ~ ra + mes + cadunico_prop + 
+                   abordagem_prop + refeicao_prop + aux_vul_prop, 
+                 data = transito)
+
+#Resumo Modelo_pos
+summary(modelo_pos)
+plot(modelo_pos)
+qqnorm(modelo_pos$residuals)
+
+###Modelo_ecr ----
+modelo_ecr <- lm(pontos_prop ~ ra + mes + ecr_prop, 
+                 data = transito)
+
+#Resumo do Modelo_ecr
+summary(modelo_ecr)
+plot(modelo_ecr)
+qqnorm(modelo_ecr$residuals)
 
 ##Comunicando ----
 
