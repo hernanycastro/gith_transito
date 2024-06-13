@@ -1,6 +1,6 @@
-#Transito Pop Rua ----
-## O que é? ----
-#
+#Transito da Pop Rua ----
+##Regulação do Transito da População em Situação de Rua pelo Estado no DF em 2023
+####As políticas públicas constragem a liberdade de ir e vir da Pop Rua? 
 
 #Pacotes ----
 library(pacman)
@@ -22,6 +22,7 @@ seas <- readxl::read_xlsx("as_seas_qnt_mes.xlsx") #Abordagem Social (SEDES/LAI)
 seg_alim <- readxl::read_xlsx("seguranca_alimentar_mes.xlsx") #Kit Refeição (SEDES/LAI)
 obitos <- readxl::read_xlsx("obitos.xlsx") #Obitos (PCDF/LAI)
 cadunico <- readxl::read_xlsx("cadastro_unico_mes.xlsx") #CadÚnico (SEDES/LAI)
+drogas <- readxl::read_xlsx("drogas_mj.xlsx") #Apreensao Cocaina e Maconha (MJ/site)
 
 #Limpeza ----
 #Converti os arquivos de Oficio do PDF para excel, já realizando a limpeza
@@ -98,6 +99,7 @@ transito <- left_join(transito, seg_alim)
 transito <- left_join(transito, cadunico)
 transito <- left_join(transito, obitos)
 transito <- left_join(transito, b_geacaf)
+transito <- left_join(transito, drogas)
 
 #Organizar Transito
 transito %<>% #Formatando objeto para formato tidy
@@ -106,7 +108,7 @@ transito %<>% #Formatando objeto para formato tidy
   select(lote,regional,ra,mes,populacao,
          pontos,cadunico,abordagem,kit_refeicao,aux_vulnerab,
          ecr,upa,
-         residuos,ouvidoria,bo,obitos)
+         residuos,ouvidoria,bo,obitos,drogas_kg)
 
 ###MUTATE ----
 ####Proporções ----
@@ -122,10 +124,11 @@ transito %<>% #Criando proporções em relação à população da RA x 1000, co
   mutate(ouvidoria_prop = round(ouvidoria / populacao * 1000,4)) %>%
   mutate(ocorrencias_prop = round(bo / populacao * 1000,4)) %>%
   mutate(obitos_prop = round(obitos / populacao * 1000,4)) %>%
+  mutate(drogas_prop = round(drogas_kg / populacao * 1000,4)) %>%
   select(lote,regional,ra,mes,
          pontos_prop,cadunico_prop,abordagem_prop,refeicao_prop,aux_vul_prop,
          ecr_prop,upa_prop,
-         residuos_prop,ouvidoria_prop,ocorrencias_prop,obitos_prop)
+         residuos_prop,ouvidoria_prop,ocorrencias_prop,obitos_prop,drogas_prop)
 
 ###Visualizando ----
 #VD vs VI's sob "Proporção" como Unidade de Medida e Variando os Níveis de Agregação 
@@ -170,7 +173,8 @@ transito %>% #Criando objeto com o ggplot para visualizar uma amostra dos dados
 modelo_anova <- aov(pontos_prop ~ ra + mes + residuos_prop + ouvidoria_prop + 
                       ocorrencias_prop + obitos_prop + ecr_prop +
                       cadunico_prop + abordagem_prop + refeicao_prop + 
-                      aux_vul_prop, data = transito)
+                      aux_vul_prop + drogas_prop, 
+                    data = transito)
 
 # Resumo da ANOVA
 summary(modelo_anova)
@@ -178,7 +182,7 @@ summary(modelo_anova)
 ####Coef.Cronbach ----
 #####Alpha Positivo ----
 alpha <- psych::alpha(transito[, c("residuos_prop", #"ecr_prop",
-                                   "cadunico_prop", 
+                                   "cadunico_prop", #"drogas_prop", 
                                    "abordagem_prop", 
                                    "aux_vul_prop")])
 #ecr_prop está correlacionado negativamente com essas variáveis 
@@ -187,9 +191,15 @@ print(alpha)
 #####Alpha Negativo ----
 alpha_neg <- psych::alpha(transito[, c("residuos_prop", "ouvidoria_prop",
                                        "refeicao_prop", #"ecr_prop",
-                                         "ocorrencias_prop", "obitos_prop")])
+                                       "ocorrencias_prop", #"drogas_prop", 
+                                       "obitos_prop"
+                                       )])
 #ecr_prop está correlacionado negativamente com essas variáveis
+#"residuos_prop" e "refeicao_pro" tem melhor coeficiente (0.69)
+#apesar do alto coeficiente não é confiável pelo alto sd de "refeicao_pro"
 print(alpha_neg)
+
+#ecr_prop é independente em relação às demais variáveis?
 
 ##Visualização ----
 
@@ -202,7 +212,8 @@ transito$regional <- factor(transito$regional)
 ### Modelo ----
 modelo <- lm(pontos_prop ~ ra + mes + residuos_prop + ouvidoria_prop + 
                    ocorrencias_prop + obitos_prop + ecr_prop +
-               cadunico_prop + abordagem_prop + refeicao_prop + aux_vul_prop, 
+               cadunico_prop + abordagem_prop + refeicao_prop + aux_vul_prop +
+               drogas_prop, 
                  data = transito)
 
 # Resumo do modelo
@@ -231,7 +242,7 @@ plot(modelo_pos)
 qqnorm(modelo_pos$residuals)
 
 ###Modelo_ecr ----
-modelo_ecr <- lm(pontos_prop ~ ra + mes + ecr_prop, 
+modelo_ecr <- lm(pontos_prop ~ ra + mes + ecr_prop + residuos_prop, 
                  data = transito)
 
 #Resumo do Modelo_ecr
