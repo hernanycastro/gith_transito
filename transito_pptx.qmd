@@ -137,7 +137,8 @@ p_cnr <- transito %>%
   ggplot(aes(y = pontos_prop, x = ecr_prop, color = lote)) +
   geom_point() +
   geom_smooth(method = "lm", size = 0.1, alpha = 0.0) +
-  facet_wrap(~ ra, drop = F) +
+  facet_grid(~ ra, drop = F) +
+  scale_x_log10() +
   labs(x = "Atendimentos CnR (1:1000)", 
        y = "Pontos de Concentração (1:1000)") +
   labs(title = "Relação do Consultório na Rua (CnR) com os Pontos de Concentração da População em Situação de Rua no DF em 2023",
