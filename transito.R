@@ -427,8 +427,8 @@ print(alpha_bo)
 alpha_modelo <- psych::alpha(transito_renda[, c("residuos_razao",
                                                   "seletiva_razao",
                                                   "abordagem_razao",
-                                                  "ecr_razao",
-                                                  "densidade"
+                                                  "ecr_razao"#,
+                                                  #"densidade"
                                                 )])
 print(alpha_modelo)
 
@@ -441,7 +441,7 @@ observed_fit <- transito_renda %>%
   specify(mean_ativos_razao ~ residuos_razao + 
             seletiva_razao +
             abordagem_razao +
-            ecr_razao +
+            ecr_razao + 
             densidade
             ) %>%
   fit()
@@ -481,8 +481,8 @@ null_ativos <- transito_renda %>%
   specify(mean_ativos_razao ~ residuos_razao + 
             seletiva_razao +
             abordagem_razao +
-            ecr_razao + 
-            densidade) %>%
+            ecr_razao #+ densidade
+          ) %>%
   hypothesize(null = "point", mu = 0) %>% #sugere a hipótese que ativos_prop é igual a zero
   generate(reps = 1000, type = "bootstrap") %>%
   #calculate(stat = "mean") #compara médias
@@ -491,7 +491,7 @@ null_ativos <- transito_renda %>%
 null_ativos
 
 get_confidence_interval(
-  null_ativos, 
+  bootstrap_distribution, 
   point_estimate = observed_fit, 
   level = .95
 )
@@ -509,8 +509,8 @@ observed_fit_g1 <- transito_renda %>%
   specify(mean_ativos_razao ~ residuos_razao + 
             seletiva_razao +
             abordagem_razao +
-            ecr_razao +
-            densidade) %>%
+            ecr_razao #+ densidade
+          ) %>%
   fit()
 
 bootstrap_distribution_g1 <- transito_renda %>%
@@ -518,14 +518,25 @@ bootstrap_distribution_g1 <- transito_renda %>%
   specify(mean_ativos_razao ~ residuos_razao + 
             seletiva_razao +
             abordagem_razao +
-            ecr_razao +
-            densidade # propõe que razão de ativos é nulo
+            ecr_razao #+ densidade # propõe que razão de ativos é nulo
   ) %>% #especifica a VD e a VI ou VI's
   generate(reps = 1000, type = "bootstrap") %>% #bootstraping x1000
   fit() 
 
+null_ativos_g1 <- transito_renda %>% 
+  filter(grupo_renda == "g1_alta_renda") %>%
+  specify(mean_ativos_razao ~ residuos_razao + 
+            seletiva_razao +
+            abordagem_razao +
+            ecr_razao #+ densidade
+  ) %>%
+  hypothesize(null = "point", mu = 0) %>% #sugere a hipótese que ativos_prop é igual a zero
+  generate(reps = 1000, type = "bootstrap") %>%
+  #calculate(stat = "mean") #compara médias
+  fit()
+
 data_ci_g1 <- get_confidence_interval(
-  bootstrap_distribution_g1, 
+  null_ativos_g1, 
   point_estimate = observed_fit_g1, 
   level = .95
 )
@@ -551,8 +562,8 @@ observed_fit_g2 <- transito_renda %>%
   specify(mean_ativos_razao ~ residuos_razao + 
             seletiva_razao +
             abordagem_razao +
-            ecr_razao +
-            densidade) %>%
+            ecr_razao #+ densidade
+          ) %>%
   fit()
 
 bootstrap_distribution_g2 <- transito_renda %>%
@@ -560,14 +571,25 @@ bootstrap_distribution_g2 <- transito_renda %>%
   specify(mean_ativos_razao ~ residuos_razao + 
             seletiva_razao +
             abordagem_razao +
-            ecr_razao +
-            densidade # propõe que razão de ativos é nulo
+            ecr_razao #+ densidade # propõe que razão de ativos é nulo
   ) %>% #especifica a VD e a VI ou VI's
   generate(reps = 1000, type = "bootstrap") %>% #bootstraping x1000
   fit() 
 
+null_ativos_g2 <- transito_renda %>% 
+  filter(grupo_renda == "g2_media_alta_renda") %>%
+specify(mean_ativos_razao ~ residuos_razao + 
+          seletiva_razao +
+          abordagem_razao +
+          ecr_razao #+ densidade
+) %>%
+  hypothesize(null = "point", mu = 0) %>% #sugere a hipótese que ativos_prop é igual a zero
+  generate(reps = 1000, type = "bootstrap") %>%
+  #calculate(stat = "mean") #compara médias
+  fit()
+
 data_ci_g2 <- get_confidence_interval(
-  bootstrap_distribution_g2, 
+  null_ativos_g2, 
   point_estimate = observed_fit_g2, 
   level = .95
 )
@@ -593,8 +615,8 @@ observed_fit_g3 <- transito_renda %>%
   specify(mean_ativos_razao ~ residuos_razao + 
             seletiva_razao +
             abordagem_razao +
-            ecr_razao +
-            densidade) %>%
+            ecr_razao #+ densidade
+          ) %>%
   fit()
 
 bootstrap_distribution_g3 <- transito_renda %>%
@@ -602,14 +624,25 @@ bootstrap_distribution_g3 <- transito_renda %>%
   specify(mean_ativos_razao ~ residuos_razao + 
             seletiva_razao +
             abordagem_razao +
-            ecr_razao +
-            densidade # propõe que razão de ativos é nulo
+            ecr_razao #+ densidade # propõe que razão de ativos é nulo
   ) %>% #especifica a VD e a VI ou VI's
   generate(reps = 1000, type = "bootstrap") %>% #bootstraping x1000
   fit() 
 
+null_ativos_g3 <- transito_renda %>% 
+  filter(grupo_renda == "g3_media_baixa_renda") %>%
+specify(mean_ativos_razao ~ residuos_razao + 
+          seletiva_razao +
+          abordagem_razao +
+          ecr_razao #+ densidade
+) %>%
+  hypothesize(null = "point", mu = 0) %>% #sugere a hipótese que ativos_prop é igual a zero
+  generate(reps = 1000, type = "bootstrap") %>%
+  #calculate(stat = "mean") #compara médias
+  fit()
+
 data_ci_g3 <- get_confidence_interval(
-  bootstrap_distribution_g3, 
+  null_ativos_g3, 
   point_estimate = observed_fit_g3, 
   level = .95
 )
@@ -635,8 +668,8 @@ observed_fit_g4 <- transito_renda %>%
   specify(mean_ativos_razao ~ residuos_razao + 
             seletiva_razao +
             abordagem_razao +
-            ecr_razao +
-            densidade) %>%
+            ecr_razao #+ densidade
+          ) %>%
   fit()
 
 bootstrap_distribution_g4 <- transito_renda %>%
@@ -644,14 +677,25 @@ bootstrap_distribution_g4 <- transito_renda %>%
   specify(mean_ativos_razao ~ residuos_razao + 
             seletiva_razao +
             abordagem_razao +
-            ecr_razao +
-            densidade # propõe que razão de ativos é nulo
+            ecr_razao #+ densidade # propõe que razão de ativos é nulo
   ) %>% #especifica a VD e a VI ou VI's
   generate(reps = 1000, type = "bootstrap") %>% #bootstraping x1000
   fit() 
 
+null_ativos_g4 <- transito_renda %>% 
+  filter(grupo_renda == "g4_baixa_renda") %>%
+specify(mean_ativos_razao ~ residuos_razao + 
+          seletiva_razao +
+          abordagem_razao +
+          ecr_razao #+ densidade
+) %>%
+  hypothesize(null = "point", mu = 0) %>% #sugere a hipótese que ativos_prop é igual a zero
+  generate(reps = 1000, type = "bootstrap") %>%
+  #calculate(stat = "mean") #compara médias
+  fit()
+
 data_ci_g4 <- get_confidence_interval(
-  bootstrap_distribution_g4, 
+  null_ativos_g4, 
   point_estimate = observed_fit_g4, 
   level = .95
 )
