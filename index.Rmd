@@ -1,0 +1,327 @@
+---
+title: "Lista 4"
+author: "Hernany Gomes de Castro"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#Pacotes ----
+library(pacman)
+p_load("tidyverse", "tidyr", "haven", "lubridate","janitor",
+       "readxl", "stringr", "magrittr", "psych", "gapminder","scales",
+       "rmarkdown","writexl","infer","patchwork","car","ggpubr","tidymodels",
+       "stats")
+
+#Importacao ----
+populacao_ibge <- readxl::read_xlsx("populacao_df_ra.xlsx") #População RA's (Censo IBGE 2022)
+densidade_ipedf <- readxl::read_xlsx("densidade_ra.xlsx") #Densidade RA's (IPEDF/Censo IBGE 2022)
+pontos <- readxl::read_xlsx("as_seas_pontos.xlsx") #Concentração de Pop Rua (SEDES/LAI)
+saude_ecr <- readxl::read_xlsx("saude_ecr.xlsx") #Consultório na Rua (SES/LAI)
+bo <- readxl::read_xlsx("pcdf_regionais.xlsx") #Boletim de Ocorrências (PCDF/LAI)
+ouvidoria <- readxl::read_xlsx("ouv_dist.xlsx") #Ouvidorias (CGDF/LAI)
+saude_upa <- readxl::read_xlsx("saude_upa.xlsx") #UPA (SES/LAI)
+residuos_lotes <- readxl::read_xlsx("lotes_residuos.xlsx") #SLU (Site SLU)
+residuos_slu <- readxl::read_xlsx("residuos.xlsx") #SLU (Site SLU)
+coleta_seletiva <- readxl::read_xlsx("coleta_seletiva.xlsx") #SLU (Site SLU)
+b_geacaf <- readxl::read_xlsx("as_beneficios_geacaf_mes.xlsx") #Benefício Eventual GEACAF (SEDES/LAI)
+seas_ativos <- readxl::read_xlsx("seas_ativos.xlsx") #Abordagem Social_pessoas_ativas (SEDES/LAI)
+seas_atendidos <- readxl::read_xlsx("seas_atendidos.xlsx") #Abordagem Social_pessoas_atendidas (SEDES/LAI)
+seas_abordagem <- readxl::read_xlsx("seas_abordagem.xlsx") #Abordagem Social (SEDES/LAI)
+refeicoes <- readxl::read_xlsx("seguranca_alimentar_mes.xlsx") #Kit_refeição do Centro_pop (SEDES/LAI)
+obitos <- readxl::read_xlsx("obitos.xlsx") #Obitos (PCDF/LAI)
+cadunico <- readxl::read_xlsx("cadastro_unico_mes.xlsx") #CadÚnico (SEDES/LAI)
+centropop <- readxl::read_xlsx("centro_pop.xlsx") #Centro_pop Pessoas (RMA)
+centropop_ra <- readxl::read_xlsx("centro_pop_ra.xlsx") #Regionalização Centro_pop (SEDES)
+creas_ra <- readxl::read_xlsx("creas_ra.xlsx") #Regionalização Creas (SEDES)
+creas_rma <- readxl::read_xlsx("creas_rma.xlsx") #Creas Pessoas (RMA)
+drogas <- readxl::read_xlsx("drogas_mj.xlsx") #Apreensao Cocaina e Maconha (MJ/site)
+grupo_renda <- readxl::read_xlsx("grupo_renda.xlsx") #RA's por Grupos de Renda (IPEDF/site)
+
+#Limpeza ----
+#Converti os arquivos de Oficio do PDF para excel, já realizando a limpeza
+
+#EAD ----
+##Transformação ----
+### PIVOTAGEM ----
+####Pontos Concent. ----
+concentracao <- pivot_longer(pontos, #Formatando objeto para formato tidy
+                             names_to = "mes",
+                             values_to = "pontos",
+                             cols = c("jan","fev","mar","abr","mai",
+                             "jun","jul","ago","set","out","nov","dez")) %>%
+  arrange(regional,ra,ano,mes, pontos)
+
+concentracao <- left_join(concentracao,residuos_lotes)
+
+####Pessoas_ativos ----
+ativos <- pivot_longer(seas_ativos, #Formatando objeto para formato tidy
+                             names_to = "mes",
+                             values_to = "ativos",
+                             cols = c("jan","fev","mar","abr","mai",
+                                      "jun","jul","ago","set","out","nov","dez")) %>%
+  arrange(ra,ano,mes,ativos)
+
+ativos <- left_join(ativos,residuos_lotes)
+
+####Pessoas_atendidos ----
+atendidos <- pivot_longer(seas_atendidos, #Formatando objeto para formato tidy
+                       names_to = "mes",
+                       values_to = "atendidos",
+                       cols = c("jan","fev","mar","abr","mai",
+                                "jun","jul","ago","set","out","nov","dez")) %>%
+  arrange(ra,ano,mes,atendidos)
+
+atendidos <- left_join(atendidos,residuos_lotes)
+
+####Abordagem/SEAS ----
+abordagem <- pivot_longer(seas_abordagem, #Formatando objeto para formato tidy
+               names_to = "mes",
+               values_to = "abordagens",
+               cols = c("jan","fev","mar","abr","mai",
+                        "jun","jul","ago","set","out","nov","dez")) %>%
+  select(ra,ano,mes,abordagens)
+
+abordagem <- left_join(abordagem,residuos_lotes)
+
+####B. Ocorrência ----
+ocorrencia <- pivot_longer(bo, #Formatando objeto para formato tidy
+                           names_to = "mes",
+                           values_to = "bo",
+                           cols = c("jan","fev","mar","abr","mai",
+                                    "jun","jul","ago","set","out","nov","dez")) %>%
+  select(ra,regional,ano,mes,bo)
+
+ocorrencia <- left_join(ocorrencia,residuos_lotes)
+
+####Ouvidorias ----
+ouvidorias <- pivot_longer(ouvidoria, #Formatando objeto para formato tidy
+                           names_to = "mes",
+                           values_to = "ouvidoria",
+                           cols = c("jan","fev","mar","abr","mai",
+                                    "jun","jul","ago","set","out","nov","dez")) %>%
+  arrange(ra, regional,ano,mes, ouvidoria)
+
+ouvidorias <- left_join(ouvidorias,residuos_lotes)
+
+####Upa ----
+upa <- pivot_longer(saude_upa, #Formatando objeto para formato tidy
+                           names_to = "mes",
+                           values_to = "upa",
+                           cols = c("jan","fev","mar","abr","mai",
+                                    "jun","jul","ago","set","out","nov","dez")) %>%
+  arrange(ra,ano,mes,upa)
+
+upa <- left_join(upa,residuos_lotes)
+
+####Residuos ----
+residuos <- pivot_longer(residuos_slu,#Formatando objeto para formato tidy
+                    names_to = "mes",
+                    values_to = "residuos",
+                    cols = c("jan","fev","mar","abr","mai",
+                             "jun","jul","ago","set","out","nov","dez")) %>%
+  arrange(lote,ano,mes,residuos)
+
+####Coleta_Seletiva ----
+coleta_seletiva <- pivot_longer(coleta_seletiva,#Formatando objeto para formato tidy
+                         names_to = "mes",
+                         values_to = "coleta_seletiva",
+                         cols = c("jan","fev","mar","abr","mai",
+                                  "jun","jul","ago","set","out","nov","dez")) %>%
+  arrange(lote,ano,mes,coleta_seletiva)
+
+####Creas ----
+creas <- left_join(creas_rma,creas_ra) %>% #Unindo RMA com Regionalização do Creas
+  filter(!is.na(creas_poprua)) %>%
+  select(ano,mes,regional,ra,creas_poprua)
+
+creas <- left_join(creas,residuos_lotes)
+
+####Centro Pop ----
+centro_pop <- left_join(centropop,centropop_ra) %>% #Unindo RMA com Regionalização do Centro_pop
+  select(ano,mes,regional,ra,centropop_pessoas)
+
+centro_pop <- left_join(centro_pop,residuos_lotes)
+
+####CadÚnico ----
+cadunico <- pivot_longer(cadunico, #Formatando objeto para formato tidy
+               names_to = "mes",
+               values_to = "cadunico",
+               cols = c("jan","fev","mar","abr","mai",
+                        "jun","jul","ago","set","out","nov","dez")) %>%
+  select(ra,ano,mes,cadunico)
+
+cadunico <- left_join(cadunico,residuos_lotes)
+
+####Seg. Alimentar ----
+seg_alim <- pivot_longer(refeicoes, #Formatando objeto para formato tidy
+               names_to = "mes",
+               values_to = "kit_refeicao",
+               cols = c("jan","fev","mar","abr","mai",
+                        "jun","jul","ago","set","out","nov","dez")) %>%
+  select(ano,mes,kit_refeicao)
+
+###JOIN - Trânsito----
+transito <- left_join(ouvidorias, concentracao) #Unindo objetos com maior número de observações
+transito <- left_join(transito, ocorrencia)
+transito <- left_join(transito, upa)
+transito <- left_join(transito, saude_ecr)
+transito <- left_join(transito, populacao_ibge)
+transito <- left_join(transito, residuos_lotes)
+transito <- left_join(transito, residuos)
+transito <- left_join(transito, coleta_seletiva)
+transito <- left_join(transito, abordagem)
+transito <- left_join(transito, seg_alim)
+transito <- left_join(transito, cadunico)
+transito <- left_join(transito, obitos)
+transito <- left_join(transito, b_geacaf)
+transito <- left_join(transito, drogas)
+transito <- left_join(transito, ativos)
+transito <- left_join(transito, atendidos)
+transito <- left_join(transito, centro_pop)
+transito <- left_join(transito, creas)
+transito <- left_join(transito, grupo_renda)
+transito <- left_join(transito, densidade_ipedf)
+
+#Organizar Transito
+transito %<>% #Formatando objeto para formato tidy
+  filter(!is.na(lote)) %>%
+  filter(!is.na(pontos)) %>%
+  select(lote,regional,ra,grupo_renda,ano,mes,populacao,densidade,
+         pontos,ativos,atendidos,centropop_pessoas,creas_poprua,cadunico,abordagens,kit_refeicao,
+         aux_vulnerab,ecr,upa,residuos,coleta_seletiva,ouvidoria,bo,obitos,drogas_kg)
+
+###MUTATE ----
+####Razão ----
+transito %<>% #Calculando razão em relação à população da RA, com 4 décimos
+  mutate(pontos_razao = round(pontos / populacao *100,5)) %>%
+  mutate(ativos_razao = round(ativos / populacao *100,5)) %>%
+  mutate(cadunico_razao = round(cadunico / populacao *100,5)) %>%
+  mutate(abordagem_razao = round(abordagens / populacao *100,5)) %>%
+  mutate(atendidos_razao = round(atendidos / populacao *100,5)) %>%
+  mutate(refeicao_razao = round(kit_refeicao / populacao *100,5)) %>%
+  mutate(aux_vul_razao = round(aux_vulnerab / populacao *100,5)) %>%
+  mutate(ecr_razao = round(ecr / populacao *100,5)) %>%
+  mutate(upa_razao = round(upa / populacao *100,5)) %>%
+  mutate(residuos_razao = round(residuos / populacao *100,5)) %>%
+  mutate(seletiva_razao = round(coleta_seletiva / populacao *100,5)) %>%
+  mutate(ouvidoria_razao = round(ouvidoria / populacao *100,5)) %>%
+  mutate(ocorrencias_razao = round(bo / populacao *100,5)) %>%
+  mutate(obitos_razao = round(obitos / populacao *100,5)) %>%
+  mutate(drogas_razao = round(drogas_kg / populacao *100,5)) %>%
+  mutate(centropop_razao = round(centropop_pessoas / populacao *100,5)) %>%
+  mutate(creas_razao = round(creas_poprua / populacao *100,5)) %>%
+  mutate(tx_coleta = round(coleta_seletiva / residuos *100,2)) %>%
+  select(lote,regional,ra,grupo_renda,ano,mes,populacao,densidade,
+         pontos_razao,ativos_razao,atendidos_razao,centropop_razao,creas_razao,
+         refeicao_razao,abordagem_razao,cadunico_razao,
+         aux_vul_razao,ecr_razao,upa_razao,residuos_razao,seletiva_razao,
+         tx_coleta,ouvidoria_razao,ocorrencias_razao,obitos_razao,drogas_razao)
+
+transito_renda <- transito %>%
+  group_by(grupo_renda,densidade,ano,mes,centropop_razao,creas_razao,
+           refeicao_razao,abordagem_razao,cadunico_razao,
+           aux_vul_razao,ecr_razao,upa_razao,residuos_razao,seletiva_razao,
+           tx_coleta,ouvidoria_razao,ocorrencias_razao,obitos_razao,
+           drogas_razao) %>%
+  summarise(mean_ativos_razao = mean(ativos_razao)) %>%
+  select(grupo_renda,densidade,ano,mes,mean_ativos_razao,centropop_razao,creas_razao,
+         refeicao_razao,abordagem_razao,cadunico_razao,
+         aux_vul_razao,ecr_razao,upa_razao,residuos_razao,seletiva_razao,
+         tx_coleta,ouvidoria_razao,ocorrencias_razao,obitos_razao,drogas_razao)
+observed_fit <- transito_renda %>%
+  specify(mean_ativos_razao ~ residuos_razao + 
+            seletiva_razao +
+            abordagem_razao +
+            ecr_razao + 
+            densidade
+            ) %>%
+  fit()
+
+bootstrap_distribution <- transito_renda %>%
+  specify(mean_ativos_razao ~ residuos_razao + 
+            seletiva_razao +
+            abordagem_razao +
+            ecr_razao + # propõe que razão de ativos é nulo
+            densidade
+          ) %>% #especifica a VD e a VI ou VI's
+  generate(reps = 1000, type = "bootstrap") %>% #bootstraping x1000
+  fit()
+  #calculate(stat = #"mean", #especifica a estatística desejada
+                     #"median", 
+                     #"sum", 
+                     #"sd", 
+                     #"prop", 
+                     #"count", 
+                     #"diff in means"#,
+                     #"diff in medians", 
+                     #"diff in props", 
+                     #"Chisq", 
+                     #"F", 
+                     #"slope", 
+                     #"correlation", 
+                     #"t", 
+                     #"z",
+                     #"ratio of props", 
+                     #"odds ratio", 
+                     #"ratio of means") 
+
+bootstrap_distribution
+
+null_ativos <- transito_renda %>% 
+  #filter(grupo_renda == "")
+  specify(mean_ativos_razao ~ residuos_razao + 
+            seletiva_razao +
+            abordagem_razao +
+            ecr_razao #+ densidade
+          ) %>%
+  hypothesize(null = "point", mu = 0) %>% #sugere a hipótese que ativos_prop é igual a zero
+  generate(reps = 1000, type = "bootstrap") %>%
+  #calculate(stat = "mean") #compara médias
+    fit()
+
+null_ativos
+
+dataci <- get_confidence_interval(
+  bootstrap_distribution, 
+  point_estimate = observed_fit, 
+  level = .95
+)
+
+visualize(null_ativos) + 
+  shade_p_value(observed_fit, direction = "both")
+#entendendo o gráfico:
+#a linha vermelha é a média de ativos
+#a parte sombreada é o p_value - a parte signifitiva
+
+point_ci <- left_join(null_ativos,dataci)
+lista4 <- ggplot(point_ci, aes(x = estimate, ymin = lower_ci, ymax = upper_ci, 
+                     color = term, fill = term)) +
+  geom_density(alpha = 0.5) +
+  geom_errorbar() +
+  scale_x_log10() +
+  scale_y_discrete() +
+  annotate("point", x = point_ci$estimate, y = 0, color = "blue") +
+  #annotate("segment", x = point_ci$estimate, xend = point_ci$lower_ci, y = 0, yend = 0, color = "blue", size = 1, alpha = 0.5) +
+  #annotate("segment", x = point_ci$estimate, xend = point_ci$upper_ci, y = 0, yend = 0, color = "blue", size = 1, alpha = 0.5) +
+  labs(
+    x = "Estimativa Intervalar (IC)",  # Adjust label if 'estimate' represents variables
+    y = "",
+    title = "Ponto de Estimativa e Estimativa Intervalar (95%)",
+    subtitle = "Razões de Abordagem Social, Consultório na Rua e Coletas de Resíduos",
+    caption = "Elaboração de Hernany Gomes de Castro, com base em dados do Processo - LAI-005865/2024"
+  ) +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+```
+
+## Estimativa Intervalar de Confiança
+
+O Gráfico a seguir apresenta a estimativa intervalar, com 95% de confiança, para as razões de Abordagem Social, Consultório na Rua, Coleta total de resíduos e Coleta Seletiva de resíduos.
+
+```{r pressure, echo=FALSE, warning=FALSE}
+plot(lista4)
+```
+
+O Gráfico mostra que o ponto de estimativa (PE) das razões está próximo ao zero, embora levemente acima, enquanto a estimativa intervalar (IC) varia próximo de zero, com comportamento diferente entre as variáveis. A variável Coleta Seletiva é a única com IC abaixo do PE, enquanto Abordagem Social é a única acima. Por outro lado, a variável Consultório na Rua apresenta IC acima e abaixo do ponto de estimativa.
