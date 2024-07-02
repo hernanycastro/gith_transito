@@ -318,7 +318,7 @@ lista4 <- ggplot(point_ci, aes(x = estimate, ymin = lower_ci, ymax = upper_ci,
 
 ## Estimativa Intervalar de Confiança
 
-O Gráfico a seguir apresenta a estimativa intervalar, com 95% de confiança, para as razões de Abordagem Social, Consultório na Rua, Coleta total de resíduos e Coleta Seletiva de resíduos.
+O Gráfico, a seguir, apresenta a estimativa intervalar para as razões de Abordagem Social, Consultório na Rua, Coleta total de resíduos e Coleta Seletiva de resíduos, , com 95% de confiança, em relação à razão de pessoas em situação de rua ativas e identificadas nas regiões administrativas do Distrito Federal pelo Serviço Especializado de Abordagem Social (SEAS), da Secretaria de Estado de Desenvolvimento Social do Distrito Federal. Os dados são do ano 2023.
 
 ```{r pressure, echo=FALSE, warning=FALSE}
 plot(lista4)
